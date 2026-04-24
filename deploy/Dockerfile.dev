@@ -1,0 +1,15 @@
+# Development image with reflex for hot-reload
+FROM golang:1.23-alpine
+
+# Install reflex for file watching and process restart
+RUN go install github.com/cespare/reflex@v0.3.1
+
+# Create app directory
+WORKDIR /app
+
+# Default reflex config: rebuild and run on .go file changes
+# Can be overridden via reflex.conf mount or REFLEX_ARGS env var
+ENV REFLEX_ARGS="-r '\\.go$' -s -- go run ."
+
+# Reflex as entrypoint - watches files and restarts process
+ENTRYPOINT ["sh", "-c", "reflex $REFLEX_ARGS"]

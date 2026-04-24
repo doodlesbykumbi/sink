@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: live-sync-demo
+---
+# Development deployment with reflex for hot-reload
+# Reflex watches for file changes and restarts the process automatically
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: live-sync-demo
+  labels:
+    app: demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+        - name: app
+          image: golang:1.23-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              # Install reflex for hot-reload
+              go install github.com/cespare/reflex@v0.3.1
+              
+              # Create app directory and wait for initial sync
+              mkdir -p /app
+              echo "Waiting for initial file sync..."
+              while [ ! -f /app/main.go ]; do sleep 1; done
+              
+              echo "Starting reflex (watching for .go changes)..."
+              # -r: regex for files to watch
+              # -s: run command in a new process group (allows clean restart)
+              # -g: glob pattern (alternative to -r)
+              cd /app && reflex -r '\.go$' -s -- go run .
+          workingDir: /app
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          # Keep container running even if reflex hasn't started yet
+          livenessProbe:
+            exec:
+              command: ["true"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
