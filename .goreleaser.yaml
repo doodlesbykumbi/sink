@@ -27,11 +27,14 @@ builds:
 
 archives:
   - id: sink
-    format: tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
+    formats:
+      - tar.gz
+      - zip
+    formats_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 checksum:
   name_template: "checksums.txt"
@@ -49,4 +52,5 @@ release:
     owner: doodlesbykumbi
     name: sink
   draft: false
-  prerelease: auto
+  prerelease: "false"
+  make_latest: "true"
